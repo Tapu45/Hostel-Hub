@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String  @id @default(uuid())
+  name      String
+  email     String  @unique
+  password  String
+  role      Role    @relation(fields: [roleId], references: [id])
+  roleId    String
+  createdAt DateTime @default(now())
+
+   studentRoom StudentRoom?
+
+  // Relations
+  attendance       Attendance[]
+  fees             Fees[]
+  
+  complaints       MessComplaint[]
+  roomChangeRequests RoomChangeRequest[]
+  entryExitLogs    EntryExitLog[]
+}
+
+model Role {
+  id    String @id @default(uuid())
+  name  String @unique
+  users User[]
+}
+
+// 📌 Attendance Tracking
+model Attendance {
+  id        String   @id @default(uuid())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String
+  date      DateTime @default(now())
+  status    String   // Present, Absent, Late
+}
+
+// 📌 Mess Menu
+model MessMenu {
+  id        String   @id @default(uuid())
+  day       String   // Monday, Tuesday, etc.
+  breakfast String
+  lunch     String
+  dinner    String
+}
+
+// 📌 Mess Complaints
+model MessComplaint {
+  id        String   @id @default(uuid())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String
+  complaint String
+  createdAt DateTime @default(now())
+}
+
+// 📌 Fees Management
+model Fees {
+  id        String   @id @default(uuid())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String
+  amount    Float
+  status    String   // Paid, Pending
+  receipt   String?  // Receipt URL
+}
+
+
+
+
+// 📌 Room Change Request
+model RoomChangeRequest {
+  id        String   @id @default(uuid())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String
+  reason    String
+  status    String   @default("Pending") // Approved, Rejected, Pending
+}
+
+// 📌 Notices (Posted by Warden)
+model Notice {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+}
+
+// 📌 Inventory Management
+model Inventory {
+  id        String   @id @default(uuid())
+  item      String
+  quantity  Int
+}
+
+// 📌 Entry & Exit Log
+model EntryExitLog {
+  id        String   @id @default(uuid())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String
+  type      String   // Entry or Exit
+  timestamp DateTime @default(now())
+}
+
+model Floor {
+  id    String @id @default(uuid())
+  name  String @unique
+  rooms Room[]
+}
+
+model Room {
+  id       String   @id @default(uuid())
+  name     String   @unique
+  floor    Floor    @relation(fields: [floorId], references: [id])
+  floorId  String
+  studentRoom StudentRoom?
+}
+
+model StudentRoom {
+  id        String @id @default(uuid())
+  student   User   @relation(fields: [studentId], references: [id])
+  studentId String @unique
+  room      Room   @relation(fields: [roomId], references: [id])
+  roomId    String @unique
+}
